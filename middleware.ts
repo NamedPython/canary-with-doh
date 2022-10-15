@@ -8,7 +8,7 @@ export const config = {
 }
 
 const canaryLookupTarget = 'canary-lookup.namedpython.dev'
-const defaultOptions: Options = { maxAge: 60 * 60 * 24 * 5, sameSite: 'strict' }
+const defaultOptions: Options = { maxAge: 60 * 60 * 24 * 5, sameSite: 'none', secure: true }
 
 export async function middleware(request: Request) {
   const url = new URL(request.url)
