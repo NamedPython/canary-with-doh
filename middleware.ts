@@ -1,5 +1,6 @@
 import { rewrite, next } from '@vercel/edge';
 import { Options, RequestCookies, ResponseCookies } from '@edge-runtime/cookies';
+import { AES, enc } from 'crypto-js'
 
 export const config = {
   matcher: [
@@ -8,7 +9,7 @@ export const config = {
 }
 
 const canaryLookupTarget = 'canary-lookup.namedpython.dev'
-const defaultOptions: Options = { maxAge: 60 * 60 * 24 * 5, sameSite: 'none', secure: true }
+const defaultOptions: Options = { maxAge: 60 * 60 * 24 * 5, sameSite: 'lax', secure: false }
 
 export async function middleware(request: Request) {
   const url = new URL(request.url)
@@ -16,10 +17,15 @@ export async function middleware(request: Request) {
   const path = url.pathname
   const isCanaryCookieName = `x-is-canary-${path}`
   const rewritePathCookieName = `x-rewrite-path-${path}`
+  const encryptKey = process.env.COOKIES_ENCRYPT_KEY || 'key'
+  console.log(encryptKey)
+  const { encrypt, decrypt } = AES
+  const { Utf8 } = enc
 
-  const rewritePath = cookies.get(rewritePathCookieName)
+  const rewritePath = decrypt(cookies.get(rewritePathCookieName) || '', encryptKey).toString(Utf8)
+  const isCanary = decrypt(cookies.get(isCanaryCookieName) || '', encryptKey).toString(Utf8)
   if (rewritePath) {
-    console.log(`cookie for early rewrite found: ${rewritePath}, canary: ${cookies.has(isCanaryCookieName)}`)
+    console.log(`cookie for early rewrite found: ${rewritePath}, canary: ${isCanary}`)
     return rewrite(new URL(rewritePath, url))
   }
 
@@ -53,8 +59,8 @@ export async function middleware(request: Request) {
     }
 
     // set cookies for early return
-    resCookies.set(isCanaryCookieName, beCanary ? 'true' : 'false', defaultOptions)
-    resCookies.set(rewritePathCookieName, beCanary ? canary : path, defaultOptions)
+    resCookies.set(isCanaryCookieName, encrypt(beCanary ? 'true' : 'false', encryptKey).toString(), defaultOptions)
+    resCookies.set(rewritePathCookieName, encrypt(beCanary ? canary : path, encryptKey).toString(), defaultOptions)
 
     return res
   } catch {

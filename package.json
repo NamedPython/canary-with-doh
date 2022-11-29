@@ -11,11 +11,13 @@
   "dependencies": {
     "@edge-runtime/cookies": "^1.1.0-beta.33",
     "@vercel/edge": "^0.0.4",
+    "crypto-js": "^4.1.1",
     "next": "12.3.1",
     "react": "18.2.0",
     "react-dom": "18.2.0"
   },
   "devDependencies": {
+    "@types/crypto-js": "^4.1.1",
     "@types/node": "18.11.0",
     "@types/react": "18.0.21",
     "@types/react-dom": "18.0.6",
